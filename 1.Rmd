@@ -1,0 +1,448 @@
+---
+title: '1'
+author: "SeoYeonYang"
+date: "2018년 10월 19일"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library("tidyverse")
+```
+#Lecture 1. Introduction.
+단축키<br>
+주석처리 : blank 후 Ctl+Shift+C <br>
+줄맞추기 : blank 후 Ctl+i <br>
+코드블락 생성 : Crl+Alt+i<br>
+코드블락의 코드 실행 : Ctl Shift Enter<br>
+Restart R and Run all Chunks 를 가급적 해보고 제출하기 <br>
+
+###패키지 설치
+```{r}
+# install.packages("tidyverse")
+library(tidyverse) #패키지는 가장 위에 명시
+#ggplot은 tidyverse에 포함됨.
+```
+
+수시로 update되므로 tidyverse_update() 종종 체크하기<br>
+여러개 설치하려면 install.packages(c("nycflights13", "gapminder", "Lahman"))<br>
+특정 object의 출처를 명시하기 위한 nycflights13::flights 와 같은 표현도 유효함
+
+
+#Lecture 2. Data Visualization.
+ggplot2::mpg <br>
+displ: engine size, in litres. <br>
+hwy: highway fuel efficiency, in mile per gallen (mpg). <br>
+행 개수 : nrow(DATA) <br>
+열 개수 : ncol(DATA) <br>
+행개수, 열개수 : dim(DATA) <br>
+<br>
+<br>
+
+###scatter plot : geom_point
+```{r}
+ggplot(data=mpg)+
+  geom_point(mapping=aes(x=displ, y=hwy, color=class))
+
+# displ가 5보다 큰것과 작은것 두가지 색깔로 나타남.
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = displ, y = hwy, color = displ < 5))
+
+# Using size for a discrete variable is not advised.
+# A continuous variable can not be mapped to shape.(Error)
+# continuous - color, size
+# categorical - shape
+# Categorical variables are type chr, whereas continuous variables are type dbl or int
+ggplot(data=mpg)+
+  geom_point(mapping=aes(x=displ, y=hwy, size=class))
+
+ggplot(data=mpg)+
+  geom_point(mapping=aes(x=displ, y=hwy, shape=class))
+
+ggplot(data=mpg)+
+  geom_point(mapping=aes(x=displ, y=hwy, alpha=class))
+
+ggplot(data=mpg)+
+  geom_point(mapping=aes(x=displ, y=hwy), color="blue")
+
+# size : 점크기, stroke : 둘레 두께
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy), shape=21, color="black", fill="white", size=10, stroke=5)
+```
+<br>
+<br>
+
+###Facets
+```{r}
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy)) + 
+  facet_wrap(~ class, nrow = 2) #분류가 하나
+
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy)) + 
+  facet_grid(drv ~ class) #분류가 두개
+
+# When using facet_grid() you should usually put the variable with more unique levels in the columns.
+
+# facet_grid(drv~.) or facet_grid(.~cyl) : facet_grid에서도 single variable로 facet 가능
+```
+<br>
+<br>
+
+###Smooth line : geom_smooth
+```{r}
+ggplot(data = mpg) + 
+  geom_smooth(mapping = aes(x = displ, y = hwy, linetype = drv))
+
+ggplot(data = mpg) + 
+  geom_smooth(mapping = aes(x = displ, y = hwy, color = drv))
+
+# smoothline은 class가 subcompact인것만 그리고, se=FALSE는 오차범위를 그리지 말라는 뜻
+ggplot(data = mpg, mapping = aes(x = displ, y = hwy)) + 
+  geom_point(mapping = aes(color = class)) + 
+  geom_smooth(data = filter(mpg, class == "subcompact"), se = FALSE)
+
+#grouping
+ggplot(data = mpg, mapping = aes(x = displ, y = hwy)) + 
+  geom_point() +
+  geom_smooth(se = FALSE, mapping = aes(group = drv))
+
+#mapping=aes 빠뜨리지 않기
+ggplot(data=mpg, mapping=aes(x=displ, y=hwy))+
+  geom_point()+
+  geom_smooth(mapping=aes(color=drv), se=FALSE)
+
+#덮는거 가능
+ggplot(data=mpg, mapping=aes(x=displ, y=hwy))+
+  geom_point(color="white", size=5)+
+  geom_point(mapping=aes(color=drv))
+```
+<br>
+<br>
+
+###Statistical transformations
+Line chart - geom_line() <br>
+Boxplot - geom_boxplot() <br>
+Histogram - geom_histogram() <br>
+Area chart - geom_area() <br>
+<br>
+<br>
+
+###bar chart : geom_bar
+```{r}
+#geom_bar : stat=count 가 default, 하나의 변수에 대해 count하는 graph
+ggplot(data = diamonds) + 
+  geom_bar(mapping = aes(x = cut))
+```
+<br>
+
+###bar chart의 그룹화
+```{r}
+#항목별로 높이가 1인 막대를 쌓는다. group=cut
+ggplot(data = diamonds) +
+  geom_bar(mapping = aes(x = cut, y=..prop..))
+
+
+#비율을 나타내는 bar graph
+ggplot(data = diamonds) +
+  geom_bar(mapping = aes(x = cut, y = ..prop.., group = 1))  
+
+#항목별로 높이가 1인 막대를 7개(color의 개수)씩 쌓는다. group=cut&color
+ggplot(data = diamonds) +
+  geom_bar(mapping = aes(x = cut, fill = color, y = ..prop..))
+
+#group=color이므로
+#(Ideal, E)파티션높이=[cut=Ideal, color=E의 개수]/[color=E의 개수]
+ggplot(data = diamonds) + 
+  geom_bar(mapping = aes(x = cut, y = ..prop.., fill = color, group = color))
+
+#비율을 color별로 나눠 쌓아준다.
+ggplot(data = diamonds) +
+  geom_bar(mapping = aes(x = cut, y = ..count.. / sum(..count..), fill = color))
+```
+<br>
+
+###기타
+```{r}
+# x, y축 모두를 설정한 값으로 그리고 싶다면 stat="idenetity" 반드시 필요.
+
+demo <- tribble(
+  ~cut,         ~freq,
+  "Fair",       1610,
+  "Good",       4906,
+  "Very Good",  12082,
+  "Premium",    13791,
+  "Ideal",      21551
+)
+ggplot(data = demo) +
+  geom_bar(mapping = aes(x = cut, y = freq), stat = "identity")
+
+# 범위 표시
+ggplot(data = diamonds) + 
+  stat_summary(
+    mapping = aes(x = cut, y = depth),
+    fun.ymin = min,
+    fun.ymax = max,
+    fun.y = median
+  )
+```
+<br>
+<br>
+
+###Position adjustment
+```{r}
+#color bar
+ggplot(data = diamonds) + 
+  geom_bar(mapping = aes(x = cut, color = cut))
+
+#Fill color
+ggplot(data = diamonds) + 
+  geom_bar(mapping = aes(x = cut, fill = cut))
+
+#Fill color according to another variable
+ggplot(data = diamonds) + 
+  geom_bar(mapping = aes(x = cut, fill = clarity))
+
+#position="stack"이 default(color bar를 쌓는다). idendity는 쌓지 않고 겹쳐서 그림. 즉 눈에 보이는 초록색의 최대 높이(=stack에서 초록색 bar만의 길이)가 초록색의 값(Ideal에서는 3500정도)이다.
+ggplot(data = diamonds) + 
+  geom_bar(mapping = aes(x = cut, fill = clarity), position = "identity")
+
+#투명도를 설정하면 좀 더 잘 보임
+ggplot(data = diamonds) + 
+  geom_bar(mapping = aes(x = cut, fill = clarity), position = "identity", alpha=1/5)
+
+ggplot(data = diamonds) + 
+  geom_bar(mapping = aes(x = cut, color = clarity), fill=NA, position="identity")
+
+#각 바의 길이를 모두 같게 해서 쌓음_easier to compare proportions across groups.
+ggplot(data = diamonds) + 
+  geom_bar(mapping = aes(x = cut, fill = clarity), position = "fill")
+
+#cut의 항목별로 각각에 대해 clarity에 따른 막대그래프를 그림. dodge 쓰려면 반드시 fill이나 color 써야 함.
+ggplot(data = diamonds) + 
+  geom_bar(mapping = aes(x = cut, fill = clarity), position = "dodge")
+
+#(X, Y)값이 같으면 노이즈를 줘서 산점도에 점들이 안겹치도록 만들어줌
+#X좌표가 categorical variable일 때 유용
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy), position = "jitter")
+
+#위동 동일한 효과
+ggplot(data = mpg, mapping = aes(x = displ, y = hwy)) + 
+  geom_point()+
+  geom_jitter()
+
+#겹친 점의 크기가 커짐
+ggplot(data = mpg, mapping = aes(x = cty, y = hwy)) + 
+  geom_point()+
+  geom_count()
+```
+
+###Coordinate Systems
+```{r}
+#x축 범위 설정
+ggplot(data = mpg, mapping = aes(x = class, y = hwy)) + 
+  geom_boxplot() + 
+  coord_cartesian(xlim = c(0, 5))
+
+#가로 세로 비율 설정
+ggplot(data = mpg, mapping = aes(x = class, y = hwy)) + 
+  geom_boxplot() + 
+  coord_fixed(ratio = 1/2)
+
+#boxplot 그림
+ggplot(data = mpg, mapping = aes(x = class, y = hwy)) + 
+  geom_boxplot()
+
+#xy좌표 뒤집음
+ggplot(data = mpg, mapping = aes(x = class, y = hwy)) + 
+  geom_boxplot() +
+  coord_flip()
+
+#install.packages("maps")
+library("maps")
+nz <- map_data("nz")
+ggplot(nz, aes(long, lat, group = group)) + #long, lat : 경도, 위도
+  geom_polygon(fill = "white", colour = "black")
+
+#가로세로 비율 더 보기 좋게 바뀜
+ggplot(nz, aes(long, lat, group = group)) +
+  geom_polygon(fill = "white", colour = "black") +
+  coord_quickmap()
+
+bar <- ggplot(data = diamonds) + 
+  geom_bar(
+    mapping = aes(x = cut, fill = cut), 
+    show.legend = FALSE, #legend 숨김
+    width = 1 #bar사이 간격1로 하면 따닥따닥 붙어있게 됨->원그래프가 이쁘게 나옴
+  ) + 
+  theme(aspect.ratio = 1) + #비율고정
+  labs(x = NULL, y = NULL) #x,y축 이름 없앰(숫자만 남김)
+bar
+#coord_polar_원그래프를 그림.
+bar + coord_polar() #각도=x축, 거리=y축이 기본
+bar + coord_polar(theta="y") #각도=y축, 거리=x축(첫번째 도넛, 두번째 도넛,...)
+
+#position="fill"을 fill=color랑 같이 쓰면 원이 가득차서 비율로 볼수있다.
+ggplot(data = diamonds) + 
+  geom_bar(mapping=aes(x=cut, fill=color), position="fill", width=1 )+
+  coord_polar(theta="y")
+
+#단일 원그래프(color의 비율)
+ggplot(data = diamonds) + 
+  geom_bar(mapping=aes(x=factor(1), fill=color), width=1)+
+  coord_polar(theta="y")
+```
+<br>
+<br>
+
+###기타
+```{r}
+ggplot(data = mpg, mapping = aes(x = cty, y = hwy)) +
+  geom_point() + 
+  geom_abline(intercept=0, slope=1)+ #기울기 slope, y절편 intercept인 보조선을 그림
+  coord_fixed() #x-y비율 1대1로
+```
+<br>
+<br>
+
+###Graphics for communications (ch. 28)
+
+####title, subtitl, caption, Axis labels
+```{r}
+ggplot(mpg, aes(displ, hwy)) +
+  geom_point(aes(color = class)) +
+  geom_smooth(se = FALSE) +
+  labs(
+    title = "Fuel efficiency generally decreases with engine size",
+    subtitle = "Two seaters (sports cars) are an exception because of their light weight",
+    caption = "Data from fueleconomy.gov",
+    x = "Engine displacement (L)",
+    y = "Highway fuel economy (mpg)",
+    color = "Car type" #legend 이름 설정
+ )
+
+ggplot(diamonds, aes(carat, price)) +
+  geom_point(aes(colour = cut), alpha = 1/20)#여기까지만 하면 legend영역의 color에도 alpha가 적용된다. 다음과 같이 수정한다.
+ggplot(diamonds, aes(carat, price)) +
+  geom_point(aes(colour = cut), alpha = 1/20)+
+  guides(color=guide_legend(override.aes = list(alpha=1) ))
+```
+<br>
+
+####Math equations
+```{r}
+#?plotmath
+df <- tibble(x = runif(10), y = runif(10))
+ggplot(df, aes(x, y)) + geom_point() +
+  labs(
+    x = quote(sum(x[i] ^ 2, i == 1, n)),
+    y = quote(alpha + beta + frac(delta, theta))
+  )
+```
+<br>
+
+####Annotations
+```{r}
+best_in_class <- mpg %>%
+  group_by(class) %>%
+  filter(row_number(desc(hwy)) == 1)
+best_in_class
+
+ggplot(mpg, aes(x = displ, y = hwy)) +
+  geom_point(aes(colour = class)) +
+  geom_text(aes(label = model), data = best_in_class)
+
+# install.packages("ggrepel")
+# library("ggrepel")
+ggplot(mpg, aes(displ, hwy)) +
+  geom_point(aes(colour = class)) +
+  geom_point(size = 3, shape = 1, data = best_in_class) +
+  ggrepel::geom_label_repel(aes(label = model), data = best_in_class)
+```
+<br>
+
+####Scales
+```{r}
+# breaks
+ggplot(mpg, aes(displ, hwy)) +
+  geom_point() +
+  scale_y_continuous(breaks = seq(15, 40, by = 5))
+
+# labels
+ggplot(mpg, aes(displ, hwy)) +
+  geom_point() +
+  scale_x_continuous(labels = NULL) +
+  scale_y_continuous(labels = NULL)
+
+# Plot y-axis at log scale
+ggplot(mpg, aes(x = displ, y = hwy)) +
+  geom_point() +
+  scale_y_log10()
+
+# Plot x-axis in reverse order
+ggplot(mpg, aes(x = displ, y = hwy)) +
+  geom_point() +
+  scale_x_reverse()
+
+# legend항목 조정
+ggplot(mpg, aes(displ, hwy)) +
+  geom_point(aes(colour = class)) +
+  scale_colour_discrete(labels = NULL)
+```
+<br>
+
+####Legends
+```{r}
+# Set legend position: "left", "right", "top", "bottom", none
+ggplot(mpg, aes(displ, hwy)) +
+  geom_point(aes(colour = class)) + 
+  theme(legend.position = "left")
+
+# theme함수로 legend위치 조정, guides함수로 더 조건 추가할 수 있다.
+ggplot(mpg, aes(displ, hwy)) +
+  geom_point(aes(colour = class))+
+  theme(legend.position = "left")+
+  guides(colour = guide_legend(nrow = 1, override.aes = list(size = 4)))
+```
+<br>
+
+####Zooming
+```{r}
+# Without clipping (removes unseen data points) : 단순확대-coord_cartesian이용
+ggplot(mpg, mapping = aes(displ, hwy)) +
+  geom_point(aes(color = class)) +
+  geom_smooth() +
+  coord_cartesian(xlim = c(5, 7), ylim = c(10, 30))
+
+# With clipping (removes unseen data points) : 현재 남아있는 점으로 smooth graph 그림
+ggplot(mpg, mapping = aes(displ, hwy)) +
+  geom_point(aes(color = class)) +
+  geom_smooth() +
+  xlim(5, 7) + ylim(10, 30)
+
+ggplot(mpg, mapping = aes(displ, hwy)) +
+  geom_point(aes(color = class)) +
+  geom_smooth() +
+  scale_x_continuous(limits = c(5, 7)) +
+  scale_y_continuous(limits = c(10, 30))
+
+mpg %>%
+  filter(displ >= 5, displ <= 7, hwy >= 10, hwy <= 30) %>%
+  ggplot(aes(displ, hwy)) +
+  geom_point(aes(color = class)) +
+  geom_smooth()
+```
+<br>
+
+####Themes
+```{r}
+ggplot(mpg, aes(displ, hwy)) +
+  geom_point(aes(color = class)) +
+  geom_smooth(se = FALSE) +
+  theme_bw() #theme_light, theme_classic 등등
+```
+
+
+
+
+
